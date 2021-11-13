@@ -93,6 +93,7 @@ pub fn process_loaded_ldtk(
     mut ldtk_events: EventReader<AssetEvent<LdtkAsset>>,
     mut ldtk_map_query: Query<(Entity, &Handle<LdtkAsset>, &LevelSelection, &mut Map)>,
     ldtk_assets: Res<Assets<LdtkAsset>>,
+    level_assets: Res<Assets<LdtkExternalLevel>>,
     layer_query: Query<&Layer>,
     chunk_query: Query<&Chunk>,
     new_ldtks: Query<&Handle<LdtkAsset>, Added<Handle<LdtkAsset>>>,
@@ -167,7 +168,7 @@ pub fn process_loaded_ldtk(
                     .map(|t| (t.uid, t))
                     .collect();
 
-                for (_, level) in ldtk_asset
+                for (i, level) in ldtk_asset
                     .project
                     .levels
                     .iter()
@@ -178,6 +179,15 @@ pub fn process_loaded_ldtk(
                         LevelSelection::Uid(u) => *u == l.uid,
                     })
                 {
+                    let mut level = level.clone();
+                    if ldtk_asset.project.external_levels {
+                        level = level_assets
+                            .get(ldtk_asset.external_levels.get(i).unwrap())
+                            .unwrap()
+                            .level
+                            .clone();
+                    }
+
                     if let Some(layer_instances) = &level.layer_instances {
                         for (layer_z, layer_instance) in
                             layer_instances.into_iter().rev().enumerate()
